@@ -361,19 +361,55 @@ export class VimCellManager extends VimEditorManager {
       { forward: true, linewise: true, handleArrow: true },
       { context: 'normal' }
     );
+    // SWAPPED: j goes up, k goes down
     Vim.mapCommand(
       'k',
       'motion',
       'moveByLinesOrCell',
-      { forward: false, linewise: true },
+      { forward: true, linewise: true },  // k = down
       { context: 'normal' }
     );
     Vim.mapCommand(
       'j',
       'motion',
       'moveByLinesOrCell',
-      { forward: true, linewise: true },
+      { forward: false, linewise: true }, // j = up
       { context: 'normal' }
+    );
+    Vim.mapCommand(
+      'k',
+      'motion',
+      'moveByLinesOrCell',
+      { forward: true, linewise: true },  // k = down
+      { context: 'visual' }
+    );
+    Vim.mapCommand(
+      'j',
+      'motion',
+      'moveByLinesOrCell',
+      { forward: false, linewise: true }, // j = up
+      { context: 'visual' }
+    );
+
+    // Apply user keybindings (skip j/k in normal/visual since we hardcoded them)
+    this.userKeybindings.forEach(
+      ({
+        command,
+        keys,
+        context,
+        mapfn,
+        enabled: keybindEnabled
+      }: IKeybinding) => {
+        const isJK = command === 'j' || command === 'k';
+        const isNormalOrVisual = context === 'normal' || context === 'visual';
+        if (keybindEnabled && !(isNormalOrVisual && isJK)) {
+          if (mapfn === 'map') {
+            Vim.map(command, keys, context);
+          } else {
+            Vim.noremap(command, keys, context);
+          }
+        }
+      }
     );
 
     Vim.defineAction('moveCellDown', (cm: any, actionArgs: any) => {
